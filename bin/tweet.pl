@@ -33,7 +33,7 @@ sub build_message {
     my $maxer = ["", -1];
     my $hbars = "";
     my $legend = "";
-    for my $it (top10_reservoir_usage_percentage()) {
+    for my $it (reservoir_usage_percentage()) {
         if ($maxer->[1] < $it->[1]) {
             $maxer = $it;
         }
@@ -54,14 +54,21 @@ sub hbar($n) {
     return $hbars[$b];
 }
 
-sub top10_reservoir_usage_percentage {
+sub reservoir_usage_percentage {
     my $d = usage_percentage();
 
     my %reservoir_by_name = map { $_->{"ReservoirName"} => $_ } grep { $_->{"ReservoirName"} } values %$d;
 
-    my @top10_south_to_north = qw( 牡丹水庫 南化水庫 烏山頭水庫 曾文水庫 霧社水庫 日月潭水庫 鯉魚潭水庫 德基水庫 石門水庫 翡翠水庫 );
+    # The names/order taken from: https://ioi.tw/reservoir/
+    # my @names = qw(牡丹水庫 阿公店水庫 南化水庫 烏山頭水庫 曾文水庫 白河水庫 仁義潭水庫 蘭潭水庫 湖山水庫 日月潭水庫 霧社水庫 德基水庫 石岡壩 鯉魚潭水庫 明德水庫 永和山水庫 寶山第二水庫 寶山水庫 石門水庫 翡翠水庫 新山水庫);
 
-    return map { [ $_, $reservoir_by_name{$_}{"UsagePercentage"} // 0 ] } @top10_south_to_north;
+    # Top 15 by their EffectiveCapacity
+    my @names = qw(牡丹水庫 阿公店水庫 南化水庫 烏山頭水庫 曾文水庫  仁義潭水庫 湖山水庫 日月潭水庫 霧社水庫 德基水庫 鯉魚潭水庫 永和山水庫 寶山第二水庫 石門水庫 翡翠水庫 );
+
+    # my @names = grep { /水庫/ } keys %reservoir_by_name;
+    # my @top10_south_to_north = qw( 牡丹水庫 南化水庫 烏山頭水庫 曾文水庫 霧社水庫 日月潭水庫 鯉魚潭水庫 德基水庫 石門水庫 翡翠水庫 );
+
+    return map { [ $_, $reservoir_by_name{$_}{"UsagePercentage"} // 0 ] } @names;
 }
 
 sub maybe_tweet_update ($opts, $msg) {
