@@ -29,11 +29,20 @@ sub main {
 exit(main(@ARGV));
 
 sub build_message {
-    my $hbars = hbars_of_top10_reservoir_usage_percentage();
-    my $msg = "🚰十大水庫目前水量\n" . $hbars . "\n牡南烏曾霧日鯉德石翡\n";
-    return $msg;
-}
 
+    my $maxer = ["", -1];
+    my $hbars = "";
+    my $legend = "";
+    for my $it (top10_reservoir_usage_percentage()) {
+        if ($maxer->[1] < $it->[1]) {
+            $maxer = $it;
+        }
+        $hbars .= hbar(100 * $it->[1]);
+        $legend .= substr($it->[0], 0, 1);
+    }
+
+    return $hbars . "\n" . $legend . "\n\n" . $maxer->[0] . ": " . int(100 * $maxer->[1]) . "%";
+}
 
 sub hbar($n) {
     return undef unless defined $n;
@@ -45,16 +54,14 @@ sub hbar($n) {
     return $hbars[$b];
 }
 
-sub hbars_of_top10_reservoir_usage_percentage {
+sub top10_reservoir_usage_percentage {
     my $d = usage_percentage();
 
     my %reservoir_by_name = map { $_->{"ReservoirName"} => $_ } grep { $_->{"ReservoirName"} } values %$d;
 
     my @top10_south_to_north = qw( 牡丹水庫 南化水庫 烏山頭水庫 曾文水庫 霧社水庫 日月潭水庫 鯉魚潭水庫 德基水庫 石門水庫 翡翠水庫 );
 
-    my @percentages = map { $reservoir_by_name{$_}{"UsagePercentage"} // 0 } @top10_south_to_north;
-
-    return join "", map { hbar(int(100 * $_)) } @percentages;
+    return map { [ $_, $reservoir_by_name{$_}{"UsagePercentage"} // 0 ] } @top10_south_to_north;
 }
 
 sub maybe_tweet_update ($opts, $msg) {
