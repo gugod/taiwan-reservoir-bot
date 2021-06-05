@@ -46,7 +46,7 @@ sub build_message {
 
 sub hbar($n) {
     return undef unless defined $n;
-    my @hbars = split "", "▁▂▃▃▅▅▆▆▇▇"; # 10 chars
+    my @hbars = split "", "▁▂▃▅▅▆▆▇▇▇"; # 10 chars
     # my @hbars = ('▁','▂','▃','▄','▅','▆','▇','█');
     my $b = int($n / @hbars);
     $b = $#hbars if $b > $#hbars;
