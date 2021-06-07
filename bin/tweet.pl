@@ -28,20 +28,29 @@ sub main {
 
 exit(main(@ARGV));
 
-sub build_message {
+sub percentize($n) {
+    int(100 * $n) . "%"
+}
 
-    my $maxer = ["", -1];
+sub build_message {
+    my $fullest = ["", -1, -1];
     my $hbars = "";
     my $legend = "";
-    for my $it (reservoir_usage_percentage()) {
-        if ($maxer->[1] < $it->[1]) {
-            $maxer = $it;
+    my @usages = reservoir_usage_percentage();
+    for my $it (@usages) {
+        if ($fullest->[1] < $it->[1]) {
+            $fullest = $it;
         }
         $hbars .= hbar(100 * $it->[1]);
         $legend .= substr($it->[0], 0, 1);
     }
 
-    return $hbars . "\n" . $legend . "\n\n" . $maxer->[0] . ": " . int(100 * $maxer->[1]) . "%";
+    @usages = sort { $a->[1] <=> $b->[1] } @usages;
+    my $medianer = $usages[ @usages/2 ];
+
+    return $hbars . "\n" . $legend . "\n\n" .
+        "最滿: " . $fullest->[0] . ": " . percentize($fullest->[1]) . "\n" .
+        "中位數: " . $medianer->[0] . ": " . percentize($medianer->[1]);
 }
 
 sub hbar($n) {
@@ -68,7 +77,10 @@ sub reservoir_usage_percentage {
     # my @names = grep { /水庫/ } keys %reservoir_by_name;
     # my @top10_south_to_north = qw( 牡丹水庫 南化水庫 烏山頭水庫 曾文水庫 霧社水庫 日月潭水庫 鯉魚潭水庫 德基水庫 石門水庫 翡翠水庫 );
 
-    return map { [ $_, $reservoir_by_name{$_}{"UsagePercentage"} // 0 ] } @names;
+    return map { [ $_,
+                   $reservoir_by_name{$_}{"UsagePercentage"} // 0,
+                   $reservoir_by_name{$_}{"EffectiveWaterStorageCapacity"} // 0 ]
+             } @names;
 }
 
 sub maybe_tweet_update ($opts, $msg) {
