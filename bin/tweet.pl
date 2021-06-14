@@ -28,6 +28,12 @@ sub main {
 
 exit(main(@ARGV));
 
+sub sum(@n) {
+    my $sum = 0;
+    $sum += $_ for @n;
+    return $sum;
+}
+
 sub percentize($n) {
     int(100 * $n) . "%"
 }
@@ -36,8 +42,11 @@ sub build_message {
     my $fullest = ["", -1, -1];
     my $hbars = "";
     my $legend = "";
-    my @usages = reservoir_usage_percentage();
-    for my $it (@usages) {
+
+    my $usage = reservoir_usages();
+
+    my @percentages = @{ $usage->{"percentages"} };
+    for my $it (@percentages) {
         if ($fullest->[1] < $it->[1]) {
             $fullest = $it;
         }
@@ -45,12 +54,13 @@ sub build_message {
         $legend .= substr($it->[0], 0, 1);
     }
 
-    @usages = sort { $a->[1] <=> $b->[1] } @usages;
-    my $medianer = $usages[ @usages/2 ];
+    @percentages = sort { $a->[1] <=> $b->[1] } @percentages;
+    my $medianer = $percentages[ @percentages/2 ];
 
     return $hbars . "\n" . $legend . "\n\n" .
-        "最滿: " . $fullest->[0] . ": " . percentize($fullest->[1]) . "\n" .
-        "中位數: " . $medianer->[0] . ": " . percentize($medianer->[1]);
+        "最滿：" . $fullest->[0] . ": " . percentize($fullest->[1]) . "\n" .
+        "中位數：" . $medianer->[0] . ": " . percentize($medianer->[1]) . "\n" .
+        "全台總蓄水量百分比: " . percentize($usage->{"total_percentage"});
 }
 
 sub hbar($n) {
@@ -63,10 +73,13 @@ sub hbar($n) {
     return $hbars[$b];
 }
 
-sub reservoir_usage_percentage {
+sub reservoir_usages {
     my $d = usage_percentage();
 
     my %reservoir_by_name = map { $_->{"ReservoirName"} => $_ } grep { $_->{"ReservoirName"} } values %$d;
+
+    my $effective_water_storage_capacity_total = sum(map { $_->{"EffectiveWaterStorageCapacity"} } values %$d);
+    my $effective_capacity_total = sum(map { $_->{"EffectiveCapacity"} } values %$d);
 
     # The names/order taken from: https://ioi.tw/reservoir/
     # my @names = qw(牡丹水庫 阿公店水庫 南化水庫 烏山頭水庫 曾文水庫 白河水庫 仁義潭水庫 蘭潭水庫 湖山水庫 日月潭水庫 霧社水庫 德基水庫 石岡壩 鯉魚潭水庫 明德水庫 永和山水庫 寶山第二水庫 寶山水庫 石門水庫 翡翠水庫 新山水庫);
@@ -77,10 +90,16 @@ sub reservoir_usage_percentage {
     # my @names = grep { /水庫/ } keys %reservoir_by_name;
     # my @top10_south_to_north = qw( 牡丹水庫 南化水庫 烏山頭水庫 曾文水庫 霧社水庫 日月潭水庫 鯉魚潭水庫 德基水庫 石門水庫 翡翠水庫 );
 
-    return map { [ $_,
-                   $reservoir_by_name{$_}{"UsagePercentage"} // 0,
-                   $reservoir_by_name{$_}{"EffectiveWaterStorageCapacity"} // 0 ]
-             } @names;
+
+    return {
+        "total_percentage" => ( $effective_water_storage_capacity_total / $effective_capacity_total ),
+        "percentages" => [
+            map { [ $_,
+                    $reservoir_by_name{$_}{"UsagePercentage"} // 0,
+                    $reservoir_by_name{$_}{"EffectiveWaterStorageCapacity"} // 0 ]
+              } @names
+        ]
+    }
 }
 
 sub maybe_tweet_update ($opts, $msg) {
