@@ -1,0 +1,31 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: tweet-taiwan-reservoir
+spec:
+  schedule: "0 4,18 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          volumes:
+            - name: twitter-token
+              secret:
+                secretName: taiwan-reservoir-bot-twitter-token
+          containers:
+            - name: tweet-taiwan-reservoir
+              image: gugod/taiwan-reservoir-bot:latest
+              command:
+                - perl
+                - /app/bin/tweet.pl
+                - '-c'
+                - /app/secrets/twitter-token.yml
+                - '--yes'
+              volumeMounts:
+                - name: twitter-token
+                  mountPath: /app/secrets
+                  readOnly: true
+          restartPolicy: Never
