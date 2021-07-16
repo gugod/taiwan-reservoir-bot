@@ -1,0 +1,5 @@
+.dockerignore
+Dockerfile
+k8s
+**/.git
+**/.github
