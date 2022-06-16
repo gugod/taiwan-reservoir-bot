@@ -87,9 +87,13 @@ sub reservoir_usages {
     # Top 15 by their EffectiveCapacity
     my @names = qw(牡丹水庫 阿公店水庫 南化水庫 烏山頭水庫 曾文水庫  仁義潭水庫 湖山水庫 日月潭水庫 霧社水庫 德基水庫 鯉魚潭水庫 永和山水庫 寶山第二水庫 石門水庫 翡翠水庫 );
 
+    my @missing_names = grep { !defined($reservoir_by_name{$_}) } @names;
+    if (@missing_names) {
+        die "Something reservoir is missing: " . join(", ", @missing_names) . "\n";
+    }
+
     # my @names = grep { /水庫/ } keys %reservoir_by_name;
     # my @top10_south_to_north = qw( 牡丹水庫 南化水庫 烏山頭水庫 曾文水庫 霧社水庫 日月潭水庫 鯉魚潭水庫 德基水庫 石門水庫 翡翠水庫 );
-
 
     return {
         "total_percentage" => ( $effective_water_storage_capacity_total / $effective_capacity_total ),
