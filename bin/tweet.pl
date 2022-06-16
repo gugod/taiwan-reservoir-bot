@@ -1,17 +1,15 @@
 #!/usr/bin/env perl
-use v5.26;
+use v5.36;
 use utf8;
-use feature 'signatures';
 
 use Twitter::API;
 use YAML ();
+use List::Util ('sum');
 use Encode ('encode_utf8');
 use Getopt::Long ('GetOptionsFromArray');
 use Mojo::UserAgent;
 
-sub main {
-    my @args = @_;
-
+sub main (@args) {
     my %opts;
     GetOptionsFromArray(
         \@args,
@@ -27,12 +25,6 @@ sub main {
 }
 
 exit(main(@ARGV));
-
-sub sum(@n) {
-    my $sum = 0;
-    $sum += $_ for @n;
-    return $sum;
-}
 
 sub percentize($n) {
     int(100 * $n) . "%"
@@ -78,8 +70,8 @@ sub reservoir_usages {
 
     my %reservoir_by_name = map { $_->{"ReservoirName"} => $_ } grep { $_->{"ReservoirName"} } values %$d;
 
-    my $effective_water_storage_capacity_total = sum(map { $_->{"EffectiveWaterStorageCapacity"} } values %$d);
-    my $effective_capacity_total = sum(map { $_->{"EffectiveCapacity"} } values %$d);
+    my $effective_water_storage_capacity_total = sum(map { $_->{"EffectiveWaterStorageCapacity"} || 0 } values %$d);
+    my $effective_capacity_total = sum(map { $_->{"EffectiveCapacity"} || 0 } values %$d);
 
     # The names/order taken from: https://ioi.tw/reservoir/
     # my @names = qw(牡丹水庫 阿公店水庫 南化水庫 烏山頭水庫 曾文水庫 白河水庫 仁義潭水庫 蘭潭水庫 湖山水庫 日月潭水庫 霧社水庫 德基水庫 石岡壩 鯉魚潭水庫 明德水庫 永和山水庫 寶山第二水庫 寶山水庫 石門水庫 翡翠水庫 新山水庫);
